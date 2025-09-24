@@ -21,13 +21,17 @@ const AdminDashboard = () => {
 
   const fetchSystemData = async () => {
     try {
-      const response = await fetch(`http://localhost/map-backend/admin.php?action=dashboard&id=${user.id || user.username}`);
+      const response = await fetch(`http://localhost/map-backend/admin.php?action=dashboard&id=${user.id}`);
       const data = await response.json();
       if (data.success) {
         setSystemData(data);
+      } else {
+        console.error('Admin Dashboard Error:', data);
+        alert('Error loading dashboard: ' + data.message);
       }
     } catch (error) {
       console.error('Error fetching system data:', error);
+      alert('Network error: ' + error.message);
     } finally {
       setLoading(false);
     }

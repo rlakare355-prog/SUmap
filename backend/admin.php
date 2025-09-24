@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             ]);
 
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage(), 'debug' => $e->getTraceAsString()]);
         }
     }
 
@@ -91,10 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                     $stmt = $db->prepare("SELECT * FROM students ORDER BY first_name, last_name");
                     break;
                 case 'coordinator':
-                    $stmt = $db->prepare("SELECT * FROM coordinators ORDER BY name");
+                    $stmt = $db->prepare("SELECT * FROM coordinators ORDER BY department, year, name");
                     break;
                 case 'hod':
-                    $stmt = $db->prepare("SELECT * FROM hods ORDER BY name");
+                    $stmt = $db->prepare("SELECT * FROM hods ORDER BY department, name");
                     break;
                 case 'admin':
                     $stmt = $db->prepare("SELECT * FROM admins ORDER BY name");
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             ]);
 
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage(), 'debug' => $e->getTraceAsString()]);
         }
     }
 
@@ -218,10 +218,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 default:
                     $table = $user_type . 's';
                     if ($isUpdate) {
-                        $stmt = $db->prepare("UPDATE $table SET name = :name WHERE id = :id");
+                        if ($user_type === 'coordinator') {
+                            $stmt = $db->prepare("UPDATE $table SET name = :name, department = :department, year = :year WHERE id = :id");
+                            $stmt->bindParam(':department', $data->department);
+                            $stmt->bindParam(':year', $data->year);
+                        } elseif ($user_type === 'hod') {
+                            $stmt = $db->prepare("UPDATE $table SET name = :name, department = :department WHERE id = :id");
+                            $stmt->bindParam(':department', $data->department);
+                        } else {
+                            $stmt = $db->prepare("UPDATE $table SET name = :name WHERE id = :id");
+                        }
                         $stmt->bindParam(':id', $data->user_id);
                     } else {
-                        $stmt = $db->prepare("INSERT INTO $table (name, password) VALUES (:name, :password)");
+                        if ($user_type === 'coordinator') {
+                            $stmt = $db->prepare("INSERT INTO $table (name, department, year, password) VALUES (:name, :department, :year, :password)");
+                            $stmt->bindParam(':department', $data->department);
+                            $stmt->bindParam(':year', $data->year);
+                        } elseif ($user_type === 'hod') {
+                            $stmt = $db->prepare("INSERT INTO $table (name, department, password) VALUES (:name, :department, :password)");
+                            $stmt->bindParam(':department', $data->department);
+                        } else {
+                            $stmt = $db->prepare("INSERT INTO $table (name, password) VALUES (:name, :password)");
+                        }
                         $stmt->bindParam(':password', $data->password);
                     }
                     $stmt->bindParam(':name', $data->name);

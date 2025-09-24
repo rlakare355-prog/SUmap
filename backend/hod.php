@@ -18,6 +18,19 @@ $hod_id = $_GET['id'] ?? '';
 
 if ($action == 'dashboard') {
     try {
+        // Get HoD information to determine department
+        $stmt = $db->prepare("SELECT * FROM hods WHERE id = :hod_id");
+        $stmt->bindParam(':hod_id', $hod_id);
+        $stmt->execute();
+        $hod = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$hod) {
+            echo json_encode(['success' => false, 'message' => 'HoD not found']);
+            exit;
+        }
+        
+        $department = $hod['department'];
+        
         // Get department statistics
         $stmt = $db->prepare("
             SELECT 
@@ -32,7 +45,9 @@ if ($action == 'dashboard') {
                 FROM activities
                 GROUP BY prn
             ) a ON s.prn = a.prn
+            WHERE s.dept = :department
         ");
+        $stmt->bindParam(':department', $department);
         $stmt->execute();
         $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -41,6 +56,7 @@ if ($action == 'dashboard') {
             SELECT 
                 CONCAT(s.programme, ' - Year ', s.year) as class,
                 s.programme as program,
+                s.year,
                 COUNT(s.prn) as total_students,
                 SUM(CASE WHEN (COALESCE(a.earned_points, 0) / pr.total_points) * 100 >= 100 THEN 1 ELSE 0 END) as compliant,
                 SUM(CASE WHEN (COALESCE(a.earned_points, 0) / pr.total_points) * 100 BETWEEN 50 AND 99 THEN 1 ELSE 0 END) as in_progress,
@@ -53,9 +69,11 @@ if ($action == 'dashboard') {
                 FROM activities
                 GROUP BY prn
             ) a ON s.prn = a.prn
+            WHERE s.dept = :department
             GROUP BY s.programme, s.year, pr.total_points
             ORDER BY s.programme, s.year
         ");
+        $stmt->bindParam(':department', $department);
         $stmt->execute();
         $classData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -78,13 +96,14 @@ if ($action == 'dashboard') {
 
         echo json_encode([
             'success' => true,
+            'hod' => $hod,
             'stats' => $stats,
             'classData' => $classData,
             'complianceData' => $complianceData
         ]);
 
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage(), 'debug' => $e->getTraceAsString()]);
     }
 }
 

@@ -15,13 +15,17 @@ const HoDDashboard = () => {
 
   const fetchDepartmentData = async () => {
     try {
-      const response = await fetch(`http://localhost/map-backend/hod.php?action=dashboard&id=${user.id || user.username}`);
+      const response = await fetch(`http://localhost/map-backend/hod.php?action=dashboard&id=${user.id}`);
       const data = await response.json();
       if (data.success) {
         setDepartmentData(data);
+      } else {
+        console.error('HoD Dashboard Error:', data);
+        alert('Error loading dashboard: ' + data.message);
       }
     } catch (error) {
       console.error('Error fetching department data:', error);
+      alert('Network error: ' + error.message);
     } finally {
       setLoading(false);
     }

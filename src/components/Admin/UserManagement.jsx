@@ -313,6 +313,42 @@ const UserManagement = ({ onUpdate }) => {
                     <>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PRN</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  
+                  {(userType === 'coordinator' || userType === 'hod') && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Department</label>
+                      <select
+                        value={formData.department || ''}
+                        onChange={(e) => setFormData({...formData, department: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {userType === 'coordinator' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Year</label>
+                      <select
+                        value={formData.year || ''}
+                        onChange={(e) => setFormData({...formData, year: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
+                      >
+                        <option value="">Select Year</option>
+                        <option value="FY">First Year (FY)</option>
+                        <option value="SY">Second Year (SY)</option>
+                        <option value="TY">Third Year (TY)</option>
+                        <option value="Final">Final Year</option>
+                      </select>
+                    </div>
+                  )}
+                  
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Programme</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
@@ -321,6 +357,12 @@ const UserManagement = ({ onUpdate }) => {
                     <>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                      {(userType === 'coordinator' || userType === 'hod') && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                      )}
+                      {userType === 'coordinator' && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+                      )}
                     </>
                   )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -355,6 +397,16 @@ const UserManagement = ({ onUpdate }) => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {user.name}
                         </td>
+                        {(userType === 'coordinator' || userType === 'hod') && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user.department}
+                          </td>
+                        )}
+                        {userType === 'coordinator' && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user.year}
+                          </td>
+                        )}
                       </>
                     )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">

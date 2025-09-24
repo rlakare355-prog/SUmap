@@ -35,7 +35,7 @@ if ($data->action == 'login') {
                 $query = "SELECT * FROM admins WHERE id = :username";
                 break;
             default:
-                echo json_encode(['success' => false, 'message' => 'Invalid user type']);
+                echo json_encode(['success' => false, 'message' => 'Invalid user type', 'debug' => 'Invalid userType: ' . $userType]);
                 exit;
         }
 
@@ -52,16 +52,17 @@ if ($data->action == 'login') {
                 echo json_encode([
                     'success' => true,
                     'user' => $user,
-                    'message' => 'Login successful'
+                    'message' => 'Login successful',
+                    'debug' => 'User found and password matched'
                 ]);
             } else {
-                echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
+                echo json_encode(['success' => false, 'message' => 'Invalid credentials', 'debug' => 'Password mismatch']);
             }
         } else {
-            echo json_encode(['success' => false, 'message' => 'User not found']);
+            echo json_encode(['success' => false, 'message' => 'User not found', 'debug' => 'No user found with username: ' . $username]);
         }
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage(), 'debug' => $e->getTraceAsString()]);
     }
 }
 ?>
