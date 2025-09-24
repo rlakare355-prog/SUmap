@@ -83,15 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 FROM activities a
                 JOIN students s ON a.prn = s.prn
                 LEFT JOIN activities_master am ON a.activity_type = am.id
-                WHERE a.status = 'Pending'
+                WHERE a.status = 'Pending' AND s.dept = :department AND s.year = :year
                 ORDER BY a.submitted_at DESC
                 LIMIT 10
             ");
+            $stmt->bindParam(':department', $department);
+            $stmt->bindParam(':year', $year);
             $stmt->execute();
             $pendingSubmissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             echo json_encode([
                 'success' => true,
+                'coordinator' => $coordinator,
                 'stats' => [
                     'total_students' => $totalStudents,
                     'pending_submissions' => $pendingCount,
