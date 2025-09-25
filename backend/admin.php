@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 SELECT 
                     COUNT(DISTINCT s.prn) as total_students,
                     COUNT(DISTINCT a.id) as total_activities,
-                    AVG(CASE WHEN pr.total_points > 0 THEN (earned_points / pr.total_points) * 100 ELSE 0 END) as system_compliance,
+                    AVG(CASE WHEN pr.total_points > 0 THEN (COALESCE(earned.earned_points, 0) / pr.total_points) * 100 ELSE 0 END) as system_compliance,
                     COUNT(DISTINCT pr.programme) as active_programs
                 FROM students s
                 LEFT JOIN programme_rules pr ON s.admission_year = pr.admission_year AND s.programme = pr.programme

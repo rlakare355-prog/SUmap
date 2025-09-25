@@ -20,6 +20,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     if ($action == 'dashboard') {
         try {
+            // Get coordinator information to determine department and year
+            $stmt = $db->prepare("SELECT * FROM coordinators WHERE id = :coordinator_id");
+            $stmt->bindParam(':coordinator_id', $coordinator_id);
+            $stmt->execute();
+            $coordinator = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$coordinator) {
+                echo json_encode(['success' => false, 'message' => 'Coordinator not found']);
+                exit;
+            }
+            
+            $department = $coordinator['department'];
+            $year = $coordinator['year'];
+
             // Get coordinator's class students (assuming coordinator manages specific class)
             $stmt = $db->prepare("
                 SELECT s.*, pr.total_points as required_points,
@@ -28,9 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 FROM students s
                 LEFT JOIN programme_rules pr ON s.admission_year = pr.admission_year AND s.programme = pr.programme
                 LEFT JOIN activities a ON s.prn = a.prn
+                WHERE s.dept = :department AND s.year = :year
                 GROUP BY s.prn
                 ORDER BY s.first_name, s.last_name
             ");
+            $stmt->bindParam(':department', $department);
+            $stmt->bindParam(':year', $year);
             $stmt->execute();
             $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -47,8 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 if ($progress < 50) $atRiskStudents++;
             }
 
-            // Get pending submissions count
-            $stmt = $db->prepare("SELECT COUNT(*) as pending FROM activities WHERE status = 'Pending'");
+            // Get pending submissions count for this coordinator's students
+            $stmt = $db->prepare("
+                SELECT COUNT(*) as pending 
+                FROM activities a
+                JOIN students s ON a.prn = s.prn
+                WHERE a.status = 'Pending' AND s.dept = :department AND s.year = :year
+            ");
+            $stmt->bindParam(':department', $department);
+            $stmt->bindParam(':year', $year);
             $stmt->execute();
             $pendingCount = $stmt->fetch(PDO::FETCH_ASSOC)['pending'];
 
@@ -66,12 +90,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                     FROM students s
                     LEFT JOIN programme_rules pr ON s.admission_year = pr.admission_year AND s.programme = pr.programme
                     LEFT JOIN activities a ON s.prn = a.prn
+                    WHERE s.dept = :department AND s.year = :year
                     GROUP BY s.prn, a.category, pr.total_points
                 ) as category_stats
                 LEFT JOIN programme_rules pr ON 1=1
                 WHERE category IS NOT NULL
                 GROUP BY category
             ");
+            $stmt->bindParam(':department', $department);
+            $stmt->bindParam(':year', $year);
             $stmt->execute();
             $categoryData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -111,8 +138,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         }
     }
 
+    if ($action == 'get_student_certificates') {
+        try {
+            $prn = $_GET['prn'] ?? '';
+            
+            // Get student information
+            $stmt = $db->prepare("SELECT * FROM students WHERE prn = :prn");
+            $stmt->bindParam(':prn', $prn);
+            $stmt->execute();
+            $student_info = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Get all student activities with certificates
+            $stmt = $db->prepare("
+                SELECT a.*, am.activity_name as activity_type
+                FROM activities a
+                LEFT JOIN activities_master am ON a.activity_type = am.id
+                WHERE a.prn = :prn
+                ORDER BY a.submitted_at DESC
+            ");
+            $stmt->bindParam(':prn', $prn);
+            $stmt->execute();
+            $certificates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'success' => true,
+                'certificates' => $certificates,
+                'student_info' => $student_info
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
     if ($action == 'pending_submissions') {
         try {
+            // Get coordinator information
+            $stmt = $db->prepare("SELECT * FROM coordinators WHERE id = :coordinator_id");
+            $stmt->bindParam(':coordinator_id', $coordinator_id);
+            $stmt->execute();
+            $coordinator = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$coordinator) {
+                echo json_encode(['success' => false, 'message' => 'Coordinator not found']);
+                exit;
+            }
+            
+            $department = $coordinator['department'];
+            $year = $coordinator['year'];
+
             $stmt = $db->prepare("
                 SELECT a.*, s.first_name, s.last_name, 
                        CONCAT(s.first_name, ' ', s.last_name) as student_name,
@@ -120,9 +193,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 FROM activities a
                 JOIN students s ON a.prn = s.prn
                 LEFT JOIN activities_master am ON a.activity_type = am.id
-                WHERE a.status = 'Pending'
+                WHERE a.status = 'Pending' AND s.dept = :department AND s.year = :year
                 ORDER BY a.submitted_at DESC
             ");
+            $stmt->bindParam(':department', $department);
+            $stmt->bindParam(':year', $year);
             $stmt->execute();
             $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

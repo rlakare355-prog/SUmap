@@ -237,6 +237,40 @@ const UserManagement = ({ onUpdate }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             required
           />
+          {(userType === 'coordinator' || userType === 'hod') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Department</label>
+              <select
+                value={formData.department || ''}
+                onChange={(e) => setFormData({...formData, department: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select Department</option>
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {userType === 'coordinator' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Year</label>
+              <select
+                value={formData.year || ''}
+                onChange={(e) => setFormData({...formData, year: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select Year</option>
+                <option value="1">First Year (1)</option>
+                <option value="2">Second Year (2)</option>
+                <option value="3">Third Year (3)</option>
+                <option value="4">Final Year (4)</option>
+              </select>
+            </div>
+          )}
           {!editingUser && (
             <input
               type="password"
@@ -343,42 +377,6 @@ const UserManagement = ({ onUpdate }) => {
                         <option value="">Select Year</option>
                         <option value="FY">First Year (FY)</option>
                         <option value="SY">Second Year (SY)</option>
-                        <option value="TY">Third Year (TY)</option>
-                        <option value="Final">Final Year</option>
-                      </select>
-                    </div>
-                  )}
-                  
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Programme</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      {(userType === 'coordinator' || userType === 'hod') && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                      )}
-                      {userType === 'coordinator' && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
-                      )}
-                    </>
-                  )}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    {userType === 'student' ? (
-                      <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {user.prn}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {user.first_name} {user.middle_name} {user.last_name}
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {user.programme}
                         </td>
@@ -471,5 +469,18 @@ const UserManagement = ({ onUpdate }) => {
     </div>
   );
 };
+
+// Add departments array
+const departments = [
+  'Computer Science & Engineering',
+  'Information Technology',
+  'Electronics & Telecommunication',
+  'Mechanical Engineering',
+  'Civil Engineering',
+  'Pharmacy',
+  'Management Studies',
+  'Commerce',
+  'Science'
+];
 
 export default UserManagement;

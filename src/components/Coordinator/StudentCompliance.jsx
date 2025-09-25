@@ -180,7 +180,7 @@ const StudentCompliance = ({ students }) => {
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Action Required
+                  View Certificates
                 </th>
               </tr>
             </thead>
@@ -235,16 +235,13 @@ const StudentCompliance = ({ students }) => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {isAtRisk ? (
-                        <span className="flex items-center text-red-600">
-                          <AlertTriangle className="h-4 w-4 mr-1" />
-                          Follow Up
-                        </span>
-                      ) : !isCompliant ? (
-                        <span className="text-yellow-600">Monitor</span>
-                      ) : (
-                        <span className="text-green-600">Complete</span>
-                      )}
+                      <button
+                        onClick={() => viewStudentCertificates(student.prn)}
+                        className="flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>View</span>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -261,8 +258,122 @@ const StudentCompliance = ({ students }) => {
           </div>
         )}
       </div>
+
+      {/* Student Certificates Modal */}
+      {selectedStudent && (
+        <StudentCertificatesModal
+          student={selectedStudent}
+          onClose={() => setSelectedStudent(null)}
+        />
+      )}
     </div>
   );
 };
 
+// Add state for selected student
+const [selectedStudent, setSelectedStudent] = useState(null);
+
+// Add function to view student certificates
+const viewStudentCertificates = async (prn) => {
+  try {
+    const response = await fetch(`http://localhost/map-backend/coordinator.php?action=get_student_certificates&prn=${prn}`);
+    const data = await response.json();
+    if (data.success) {
+      setSelectedStudent({
+        prn,
+        certificates: data.certificates,
+        student_info: data.student_info
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching student certificates:', error);
+  }
+};
+
+// Student Certificates Modal Component
+const StudentCertificatesModal = ({ student, onClose }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-900">
+              Certificates - {student.student_info?.first_name} {student.student_info?.last_name} ({student.prn})
+            </h3>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              <XCircle className="h-6 w-6" />
+            </button>
+          </div>
+
+          {student.certificates && student.certificates.length > 0 ? (
+            <div className="space-y-4">
+              {student.certificates.map((cert, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{cert.activity_type}</h4>
+                      <p className="text-sm text-gray-600">Category {cert.category} • {cert.level}</p>
+                      <p className="text-sm text-gray-500">Date: {new Date(cert.date).toLocaleDateString()}</p>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-2 ${
+                        cert.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                        cert.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {cert.status}
+                      </span>
+                      {cert.status === 'Approved' && (
+                        <span className="ml-2 text-sm font-medium text-green-600">
+                          +{cert.points} points
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex space-x-2 ml-4">
+                      {cert.certificate && (
+                        <button
+                          onClick={() => window.open(`http://localhost/map-backend/uploads/${cert.certificate}`, '_blank')}
+                          className="flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span>Certificate</span>
+                        </button>
+                      )}
+                      {cert.proof && (
+                        <button
+                          onClick={() => window.open(`http://localhost/map-backend/uploads/${cert.proof}`, '_blank')}
+                          className="flex items-center space-x-1 px-3 py-1 bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
+                        >
+                          <Download className="h-4 w-4" />
+                          <span>Proof</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {cert.remarks && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800"><strong>Student Remarks:</strong> {cert.remarks}</p>
+                    </div>
+                  )}
+                  
+                  {cert.coordinator_remarks && (
+                    <div className="mt-3 p-3 bg-yellow-50 rounded-lg">
+                      <p className="text-sm text-yellow-800"><strong>Coordinator Feedback:</strong> {cert.coordinator_remarks}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No certificates found</h3>
+              <p className="text-gray-600">This student hasn't submitted any activities yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 export default StudentCompliance;

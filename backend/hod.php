@@ -35,9 +35,9 @@ if ($action == 'dashboard') {
         $stmt = $db->prepare("
             SELECT 
                 COUNT(DISTINCT s.prn) as total_students,
-                AVG(CASE WHEN pr.total_points > 0 THEN (earned_points / pr.total_points) * 100 ELSE 0 END) as compliance_rate,
-                SUM(CASE WHEN (earned_points / pr.total_points) * 100 < 50 THEN 1 ELSE 0 END) as at_risk_students,
-                SUM(earned_points) as total_points
+                AVG(CASE WHEN pr.total_points > 0 THEN (COALESCE(a.earned_points, 0) / pr.total_points) * 100 ELSE 0 END) as compliance_rate,
+                SUM(CASE WHEN (COALESCE(a.earned_points, 0) / pr.total_points) * 100 < 50 THEN 1 ELSE 0 END) as at_risk_students,
+                SUM(COALESCE(a.earned_points, 0)) as total_points
             FROM students s
             LEFT JOIN programme_rules pr ON s.admission_year = pr.admission_year AND s.programme = pr.programme
             LEFT JOIN (
